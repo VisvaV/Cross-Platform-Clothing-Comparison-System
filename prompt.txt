@@ -1,0 +1,641 @@
+You are an expert Python, Deep Learning, Computer Vision, and Web Scraping engineer.
+
+Build a complete end-to-end MVP for the project:
+
+"Cross-Platform Clothing Comparison System Using Web Scraping and Deep Learning"
+
+The system allows users to upload a clothing image, enter a text description, or use both together to find visually similar clothing products across multiple e-commerce platforms.
+
+This project must demonstrate core deep learning concepts using CNN feature extraction and optional fine-tuning on fashion datasets.
+
+IMPORTANT ENVIRONMENT CONSTRAINTS
+
+The development environment already contains:
+
+Python virtual environment (venv)
+PyTorch installed with CUDA support (CUDA 11.4)
+
+Therefore:
+
+Do NOT reinstall PyTorch.
+Do NOT install CPU-only torch versions.
+Use the existing PyTorch installation in the venv.
+
+All packages must be installed inside the existing virtual environment.
+
+GPU acceleration must be used when available.
+
+Use:
+
+torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+TECH STACK
+
+Python
+PyTorch (already installed with CUDA 11.4)
+Torchvision
+Playwright (web scraping)
+FAISS-GPU (vector similarity search)
+Streamlit (frontend UI)
+SQLite (metadata storage)
+Scikit-learn TF-IDF (text embeddings)
+
+SYSTEM FEATURES
+
+The system must support:
+
+1. Image-based clothing search
+2. Text-based clothing search
+3. Hybrid search (image + text)
+4. Cross-platform product scraping
+5. Vector similarity search using FAISS
+6. Ranking based on similarity and price
+7. Streamlit search interface
+8. Offline embedding generation pipeline
+9. CNN fine-tuning using DeepFashion dataset
+
+CNN IMAGE FEATURE EXTRACTION
+
+Use a convolutional neural network architecture.
+
+Base model:
+
+ResNet50 pretrained on ImageNet using torchvision.
+
+Modify the network to act as a feature extractor.
+
+Steps:
+
+Load pretrained ResNet50
+Remove the final fully connected layer
+Use global average pooling output as embedding
+Embedding dimension = 2048
+
+Image preprocessing:
+
+Resize to 224x224
+Normalize using ImageNet normalization
+Convert to tensor
+
+All embeddings must be normalized before storing.
+
+Ensure the model runs on GPU if CUDA is available.
+
+TEXT FEATURE EXTRACTION
+
+Use TF-IDF vectorization from scikit-learn.
+
+Train TF-IDF using product titles and descriptions scraped from websites.
+
+Example query:
+
+"black oversized hoodie"
+
+Convert text to TF-IDF vector.
+
+VECTOR DATABASE
+
+Use FAISS-GPU.
+
+Store image embeddings in FAISS index.
+
+Each product must store:
+
+product_id
+image_embedding (2048 vector)
+text_embedding (TF-IDF vector)
+metadata
+
+Metadata fields:
+
+title
+brand
+price
+platform
+category
+product_link
+image_path
+
+Use cosine similarity for embedding search.
+
+SEARCH LOGIC
+
+Support three query types.
+
+Image search:
+
+User uploads image
+Extract CNN embedding
+Query FAISS index
+Retrieve top K similar products
+
+Text search:
+
+User enters clothing description
+Convert to TF-IDF vector
+Compute similarity with product text embeddings
+
+Hybrid search:
+
+User provides image + text.
+
+Combine scores using:
+
+score =
+0.65 * image_similarity
++
+0.25 * text_similarity
++
+0.10 * price_score
+
+Where:
+
+price_score = 1 / normalized_price
+
+Return ranked results.
+
+SCRAPING MODULE
+
+Use Playwright for scraping.
+
+Target platforms:
+
+Myntra
+Ajio
+H&M
+Zara
+Amazon Fashion
+Flipkart Fashion
+
+If any platform blocks scraping, automatically skip it.
+
+Fallback platforms:
+
+ASOS
+Uniqlo
+Urbanic
+Koovs
+
+Scrape clothing products for both men and women.
+
+Primary categories:
+
+T-shirts
+Shirts
+Hoodies
+Jackets
+Dresses
+Tops
+Jeans
+
+Avoid scraping the entire catalog.
+
+Extract fields:
+
+product_title
+brand
+price
+product_url
+image_url
+category
+platform
+
+Download images locally.
+
+IMAGE STORAGE
+
+Store images locally for fast embedding generation.
+
+Directory:
+
+data/images/
+
+METADATA STORAGE
+
+Use SQLite.
+
+Database file:
+
+data/products.db
+
+DEEPFASHION DATASET FOR FINE-TUNING
+
+The DeepFashion dataset is already downloaded locally.
+
+Dataset path example:
+
+datasets/DeepFashion/
+
+Dataset structure:
+
+DeepFashion/
+Anno/
+Eval/
+img/
+
+Images are located in:
+
+DeepFashion/img/MEN/ and DeepFashion/img/WOMEN/
+
+Annotations are located in:
+
+DeepFashion/Anno/
+
+Use these annotations to construct triplet samples.
+
+CNN FINE-TUNING MODULE
+
+Implement triplet network training using DeepFashion.
+
+Training samples:
+
+Anchor image
+Positive image (similar clothing)
+Negative image (different clothing)
+
+Loss function:
+
+Triplet Loss
+
+Training must support GPU acceleration.
+
+Move model and tensors to CUDA device when available.
+
+After training:
+
+Save trained weights.
+
+Use the trained CNN as feature extractor for embeddings.
+
+EMBEDDING GENERATION PIPELINE
+
+Create an offline pipeline:
+
+1. Scrape products
+2. Download product images
+3. Generate CNN embeddings
+4. Generate text embeddings
+5. Store embeddings
+6. Build FAISS index
+
+Embeddings must not be recomputed every time the application runs.
+
+MULTI-FEATURE VISUAL EMBEDDING (IMPORTANT)
+
+To improve clothing similarity retrieval accuracy, the system must not rely only on CNN features.
+
+Instead implement a multi-feature embedding pipeline that combines:
+
+1. CNN features
+2. Color features
+3. Texture features
+
+These features must be fused into a single embedding vector before storing in FAISS.
+
+CNN FEATURES
+
+Use ResNet50 pretrained on ImageNet.
+
+Remove the final classification layer.
+
+Extract the global average pooling output.
+
+CNN embedding dimension:
+
+2048
+
+Ensure embeddings are normalized.
+
+COLOR FEATURES
+
+Color plays a critical role in clothing similarity.
+
+Extract dominant color information using a color histogram.
+
+Implementation steps:
+
+Convert image to HSV color space using OpenCV.
+
+Compute histogram with bins such as:
+
+8 × 8 × 8 bins
+
+Flatten histogram into vector.
+
+Normalize histogram.
+
+Approximate color feature dimension:
+
+512
+
+TEXTURE FEATURES
+
+Clothing patterns such as stripes, checks, or floral patterns must be captured.
+
+Use Local Binary Pattern (LBP) for texture extraction.
+
+Implementation steps:
+
+Convert image to grayscale.
+
+Compute LBP features using skimage or OpenCV.
+
+Generate histogram of LBP codes.
+
+Normalize histogram.
+
+Approximate texture feature dimension:
+
+256
+
+FEATURE FUSION
+
+Combine all features into a single embedding vector.
+
+final_embedding = concatenate(
+
+cnn_features,
+color_features,
+texture_features
+
+)
+
+Example dimension:
+
+2048 + 512 + 256 = 2816
+
+Normalize the final embedding vector before storing in FAISS.
+
+VECTOR SEARCH
+
+Store the fused embedding in the FAISS index.
+
+Use cosine similarity.
+
+This improves retrieval accuracy by capturing:
+
+clothing shape (CNN)
+
+color similarity (histogram)
+
+pattern / texture similarity (LBP)
+
+PROJECT STRUCTURE UPDATE
+
+Add a new module for visual feature extraction.
+
+features/
+
+```
+cnn_features.py
+color_features.py
+texture_features.py
+feature_fusion.py
+```
+
+The embedding pipeline must call these modules when generating embeddings.
+
+EMBEDDING PIPELINE FLOW
+
+image
+↓
+cnn_features
+↓
+color_features
+↓
+texture_features
+↓
+feature_fusion
+↓
+normalized_embedding
+↓
+store in FAISS index
+
+
+STREAMLIT USER INTERFACE
+
+Create a Streamlit interface.
+
+The UI must support:
+
+Upload clothing image
+Enter clothing description
+Upload image + text together
+
+Interface layout:
+
+Input section at top
+Search button
+Results displayed below
+
+Display product cards with:
+
+product image
+product title
+platform
+price
+similarity score
+product link
+
+Allow sorting:
+
+Best match
+Lowest price
+
+PROJECT STRUCTURE
+
+Generate the following structure.
+
+clothing-comparison-system/
+
+datasets/
+DeepFashion/
+
+data/
+images/
+products.db
+
+scraper/
+myntra_scraper.py
+ajio_scraper.py
+hm_scraper.py
+zara_scraper.py
+amazon_scraper.py
+flipkart_scraper.py
+
+models/
+cnn_encoder.py
+text_encoder.py
+triplet_model.py
+
+training/
+train_triplet_network.py
+dataset_loader.py
+
+embeddings/
+generate_embeddings.py
+
+vector_search/
+faiss_index.py
+similarity_search.py
+
+ranking/
+ranking_engine.py
+
+app/
+streamlit_app.py
+
+utils/
+image_utils.py
+text_utils.py
+
+requirements.txt
+README.md
+
+CODE REQUIREMENTS
+
+Write modular, well-documented Python code.
+
+All code must run inside the existing virtual environment.
+
+Do not reinstall PyTorch.
+
+Use CUDA acceleration when available.
+
+Include setup instructions in README.
+
+Avoid external AI APIs.
+
+The deep learning component must rely on CNN feature extraction implemented in PyTorch.
+
+PLAYWRIGHT SCRAPING IMPLEMENTATION REQUIREMENTS
+
+The scraping system must be robust and avoid fragile selectors.
+
+Follow these rules when implementing scrapers.
+
+Use Playwright async API.
+
+Use:
+
+async_playwright()
+
+Always run browsers in headless mode but allow optional debugging mode.
+
+Example:
+
+headless = True
+
+Use Chromium browser.
+
+PAGE LOADING
+
+Wait for network idle before parsing content.
+
+Example:
+
+await page.wait_for_load_state("networkidle")
+
+Avoid fixed sleep calls unless necessary.
+
+SELECTORS
+
+Do not rely on deeply nested CSS selectors.
+
+Prefer:
+
+class selectors
+data attributes
+semantic elements
+
+Use multiple selector fallbacks if needed.
+
+Example strategy:
+
+try primary selector
+if fails try secondary selector
+
+SCROLLING
+
+Many fashion sites use lazy loading.
+
+Implement automatic scrolling.
+
+Example logic:
+
+scroll until page height stops increasing.
+
+IMAGE EXTRACTION
+
+Always retrieve the highest resolution product image when possible.
+
+Remove query parameters that reduce image quality.
+
+ERROR HANDLING
+
+Each scraper must include try/except blocks.
+
+If scraping fails for a platform:
+
+log the error
+skip platform
+continue scraping other platforms
+
+Do not crash the entire scraping pipeline.
+
+RATE LIMITING
+
+Add small randomized delays between requests.
+
+Example:
+
+1–3 seconds random delay
+
+This reduces bot detection.
+
+USER AGENT
+
+Set a realistic browser user-agent.
+
+Example:
+
+Chrome desktop user agent string.
+
+OUTPUT FORMAT
+
+Each scraper must output product records in the same format.
+
+Fields:
+
+product_title
+brand
+price
+product_url
+image_url
+category
+platform
+
+Return data as Python dictionaries.
+
+These will be inserted into SQLite.
+
+CODE STRUCTURE
+
+Each platform must have its own scraper module.
+
+Example:
+
+myntra_scraper.py
+ajio_scraper.py
+hm_scraper.py
+zara_scraper.py
+amazon_scraper.py
+flipkart_scraper.py
+
+Each module must expose a function:
+
+scrape_products(category, limit)
+
+The function should return a list of product dictionaries.
+
+This ensures the scraping pipeline is consistent across platforms.

@@ -1,0 +1,22 @@
+# Core dependencies
+# Note: torch and torchvision are already installed in the environment
+
+# Web scraping
+playwright>=1.40.0
+
+# Vector search
+faiss-cpu>=1.7.2
+
+# UI
+streamlit>=1.30.0
+
+# ML / feature extraction
+scikit-learn>=1.3.0
+scikit-image>=0.22.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+numpy>=1.24.0
+joblib>=1.3.0
+
+# HTTP requests (image downloading)
+requests>=2.31.0
