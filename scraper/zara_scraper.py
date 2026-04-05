@@ -1,7 +1,9 @@
-"""Zara product scraper using Playwright."""
+"""Zara product scraper using camoufox."""
 
+import asyncio
 import logging
-from playwright.async_api import async_playwright
+from urllib.parse import quote_plus
+
 from utils.text_utils import extract_price
 from scraper._base import CHROME_UA, random_delay, auto_scroll, first_text, first_attr
 
@@ -23,14 +25,32 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
     """
     results = []
     try:
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=True)
-            context = await browser.new_context(user_agent=CHROME_UA)
-            page = await context.new_page()
+        from camoufox.async_api import AsyncCamoufox
+        async with AsyncCamoufox(
+            headless=False,
+            geoip=True,
+            humanize=True,
+            os="windows",
+        ) as browser:
+            page = await browser.new_page()
 
-            url = BASE_URL.format(category=category)
-            await page.goto(url, timeout=30000)
-            await page.wait_for_load_state("networkidle", timeout=15000)
+            encoded = quote_plus(category)
+            url = BASE_URL.format(category=encoded)
+            logger.info("Navigating to %s", url)
+
+            await page.goto(url, timeout=60000, wait_until="domcontentloaded")
+            import asyncio
+            await asyncio.sleep(3)
+
+            from scraper._base import dismiss_popups
+            await dismiss_popups(page)
+            
+            try:
+                await page.wait_for_selector("div, a, li, img", timeout=25000)
+            except Exception:
+                logger.error("Cards not found on %s. Adjust selectors or proxies.", PLATFORM)
+                return []
+
             await auto_scroll(page)
 
             cards = await page.query_selector_all(
@@ -41,22 +61,22 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
                 if len(results) >= limit:
                     break
                 try:
-                    title = first_text(card, [
+                    title = await first_text(card, [
                         ".product-grid-product-info__name",
                         "[class*='product-name']",
                         "h2", "h3",
                         "[class*='name']",
                     ])
-                    price_raw = first_text(card, [
+                    price_raw = await first_text(card, [
                         ".price__amount",
                         "[class*='price']",
                         "span[class*='Price']",
                     ])
                     brand = "Zara"
-                    product_url = first_attr(card, [
+                    product_url = await first_attr(card, [
                         "a[class*='product']", "a",
                     ], "href")
-                    image_url = first_attr(card, [
+                    image_url = await first_attr(card, [
                         "img[class*='media']", "img",
                     ], "src")
 
