@@ -4,7 +4,6 @@ import os
 import sys
 import tempfile
 
-# Ensure project root is on sys.path regardless of working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import streamlit as st
@@ -13,11 +12,12 @@ from ranking.ranking_engine import rank_by_price, rank_by_score
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_ROOT            = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 FAISS_INDEX_PATH = os.path.join(_ROOT, "data/faiss_index.bin")
 FAISS_MAP_PATH   = os.path.join(_ROOT, "data/faiss_id_map.pkl")
 TFIDF_PATH       = os.path.join(_ROOT, "data/tfidf_vectorizer.pkl")
 TEXT_EMB_PATH    = os.path.join(_ROOT, "data/text_embeddings.npy")
+TEXT_ID_MAP_PATH = os.path.join(_ROOT, "data/text_id_map.pkl")   # FIX: new artifact
 DB_PATH          = os.path.join(_ROOT, "data/products.db")
 
 PIPELINE_MSG = (
@@ -26,7 +26,7 @@ PIPELINE_MSG = (
 )
 
 # ---------------------------------------------------------------------------
-# Page config — must be first Streamlit call
+# Page config
 # ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="Clothing Comparison System",
@@ -99,12 +99,28 @@ def load_searcher():
         faiss_map_path=FAISS_MAP_PATH,
         tfidf_path=TFIDF_PATH,
         text_embeddings_path=TEXT_EMB_PATH,
+        text_id_map_path=TEXT_ID_MAP_PATH,   # FIX: pass new artifact
     )
 
+
 def save_upload(uploaded_file) -> str:
+    """Write the uploaded file to a temp path and return the path.
+
+    FIX: Streamlit's UploadedFile is a BytesIO-like object. If the app
+    re-renders between upload and button click the internal read position
+    may not be at 0.  Always seek(0) before reading to guarantee the full
+    file content is written.
+    """
     suffix = os.path.splitext(uploaded_file.name)[-1] or ".jpg"
+    uploaded_file.seek(0)          # ← FIX: reset read position
+    data = uploaded_file.read()
+    if not data:
+        raise ValueError(
+            f"Uploaded file '{uploaded_file.name}' appears to be empty. "
+            "Please re-upload the image and try again."
+        )
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        tmp.write(uploaded_file.read())
+        tmp.write(data)
         return tmp.name
 
 # ---------------------------------------------------------------------------
@@ -128,6 +144,11 @@ with col_img:
     uploaded_file = st.file_uploader(
         "upload", type=["jpg", "jpeg", "png", "webp"], label_visibility="collapsed"
     )
+    # FIX: show a preview so the user knows the upload was received
+    if uploaded_file is not None:
+        uploaded_file.seek(0)
+        st.image(uploaded_file, caption="Uploaded image", use_container_width=True)
+        uploaded_file.seek(0)   # reset again so save_upload works correctly
 
 with col_sep:
     st.markdown(
@@ -144,7 +165,6 @@ with col_txt:
 
 search_clicked = st.button("🔍  Search", type="primary", use_container_width=True)
 
-# Sort + divider
 sort_col, _ = st.columns([2, 5])
 with sort_col:
     sort_mode = st.radio(
@@ -154,7 +174,7 @@ with sort_col:
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Run search on click — persist to session_state
+# Run search
 # ---------------------------------------------------------------------------
 if search_clicked:
     has_image = uploaded_file is not None
@@ -170,7 +190,11 @@ if search_clicked:
         with st.spinner("Searching across platforms..."):
             try:
                 searcher = load_searcher()
+
                 if has_image:
+                    # FIX: seek before saving — Streamlit may have read it for
+                    # the preview above; always reset position first.
+                    uploaded_file.seek(0)
                     tmp_path = save_upload(uploaded_file)
 
                 if has_image and has_text:
@@ -197,7 +221,7 @@ if st.session_state.search_error:
     st.error(f"Search failed: {st.session_state.search_error}")
 
 if st.session_state.results:
-    results = list(st.session_state.results)
+    results    = list(st.session_state.results)
     search_type = st.session_state.search_type
 
     if sort_mode == "Lowest Price":
@@ -213,15 +237,15 @@ if st.session_state.results:
 
     cols = st.columns(3, gap="medium")
     for i, product in enumerate(results):
-        delay_cls  = f"card-delay-{min(i, 8)}"
-        score      = product.get("hybrid_score") or product.get("similarity_score") or 0.0
-        score_pct  = min(max(score * 100, 0), 100)
-        price      = product.get("price")
-        price_str  = f"₹{price:,.0f}" if price else "Price unavailable"
-        title      = product.get("product_title") or "Unknown"
-        platform   = (product.get("platform") or "").upper()
-        brand      = product.get("brand") or ""
-        meta       = " / ".join(filter(None, [platform, brand]))
+        delay_cls   = f"card-delay-{min(i, 8)}"
+        score       = product.get("hybrid_score") or product.get("similarity_score") or 0.0
+        score_pct   = min(max(score * 100, 0), 100)
+        price       = product.get("price")
+        price_str   = f"₹{price:,.0f}" if price else "Price unavailable"
+        title       = product.get("product_title") or "Unknown"
+        platform    = (product.get("platform") or "").upper()
+        brand       = product.get("brand") or ""
+        meta        = " / ".join(filter(None, [platform, brand]))
         product_url = product.get("product_url") or ""
         image_path  = product.get("image_path") or ""
 
@@ -229,12 +253,17 @@ if st.session_state.results:
             if image_path and os.path.exists(image_path):
                 st.image(image_path, use_container_width=True)
             else:
-                st.markdown(
-                    '<div style="background:rgba(255,255,255,0.04);border-radius:12px 12px 0 0;'
-                    'height:200px;display:flex;align-items:center;justify-content:center;'
-                    'color:rgba(255,255,255,0.15);font-size:0.8rem;">NO IMAGE</div>',
-                    unsafe_allow_html=True,
-                )
+                # FIX: try image_url as fallback before showing placeholder
+                image_url = product.get("image_url") or ""
+                if image_url:
+                    st.image(image_url, use_container_width=True)
+                else:
+                    st.markdown(
+                        '<div style="background:rgba(255,255,255,0.04);border-radius:12px 12px 0 0;'
+                        'height:200px;display:flex;align-items:center;justify-content:center;'
+                        'color:rgba(255,255,255,0.15);font-size:0.8rem;">NO IMAGE</div>',
+                        unsafe_allow_html=True,
+                    )
 
             st.markdown(f"""
 <div class="product-card {delay_cls}" style="border-radius:0 0 16px 16px;border-top:none;">
