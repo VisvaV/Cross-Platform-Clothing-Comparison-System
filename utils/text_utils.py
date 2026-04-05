@@ -5,20 +5,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Currency symbols and their common string representations
 _CURRENCY_PATTERN = re.compile(r"[₹$£€¥\s,]")
-_PRICE_PATTERN = re.compile(r"[\d]+(?:\.\d+)?")
+_PRICE_PATTERN    = re.compile(r"[\d]+(?:\.\d+)?")
 
 
 def clean_text(text: str) -> str:
-    """Lowercase and strip punctuation from text.
-
-    Args:
-        text: Raw product title or description.
-
-    Returns:
-        Cleaned lowercase string with punctuation removed.
-    """
+    """Lowercase and strip punctuation from text."""
     if not text:
         return ""
     text = text.lower()
@@ -27,25 +19,24 @@ def clean_text(text: str) -> str:
     return text
 
 
-def extract_price(raw_str: str) -> float:
+def extract_price(raw_str: str) -> float | None:
     """Parse a price string with currency symbols into a float.
 
-    Handles ₹, $, £, €, ¥ and comma-separated numbers.
-
-    Args:
-        raw_str: Raw price string, e.g. "₹1,299", "$49.99", "£35".
-
     Returns:
-        Numeric price as float, or 0.0 if parsing fails.
+        Numeric price as float, or None if parsing fails.
+
+    FIX: previously returned 0.0 on failure, which caused ranking_engine and
+    similarity_search hybrid scoring to treat products with unknown prices as
+    "free" (cheapest possible), skewing price-based ranking heavily.  Returning
+    None lets callers distinguish "price unknown" from "price is zero".
     """
     if not raw_str:
-        return 0.0
+        return None
     try:
-        # Remove currency symbols, spaces, and commas
         cleaned = _CURRENCY_PATTERN.sub("", str(raw_str))
-        match = _PRICE_PATTERN.search(cleaned)
+        match   = _PRICE_PATTERN.search(cleaned)
         if match:
             return float(match.group())
     except Exception as e:
         logger.warning("Failed to parse price from '%s': %s", raw_str, e)
-    return 0.0
+    return None
