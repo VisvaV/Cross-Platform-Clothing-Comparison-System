@@ -12,7 +12,7 @@ The system runs in two phases:
 ### Feature Extraction
 
 - **CNN (2048-dim)**: ResNet50 pretrained on ImageNet (optionally fine-tuned on DeepFashion)
-- **Color (512-dim)**: HSV histogram via OpenCV
+- **Color (512-dim)**: HSV histogram via PIL + NumPy
 - **Texture (256-dim)**: LBP histogram via scikit-image
 - **Fused embedding (2816-dim)**: L2-normalized concatenation of all three
 
@@ -50,6 +50,9 @@ The system runs in two phases:
 ```bash
 pip install -r requirements.txt
 ```
+
+> If OpenCV fails to import due missing system libraries (for example `libGL.so.1`),
+> this project still runs because color feature extraction now uses PIL + NumPy only.
 
 ### Install Playwright Browsers
 
@@ -94,6 +97,20 @@ The app will open in your browser. You can:
 - Switch between "Best Match" and "Lowest Price" sort modes
 
 > The app requires the offline pipeline to have been run first. If the FAISS index is missing, the app will display instructions to run the pipeline.
+
+### Quick Run Checklist
+
+1. Install Python dependencies.
+2. Install Playwright browser once (`playwright install chromium`).
+3. Build data/index artifacts:
+   ```bash
+   python -m embeddings.generate_embeddings --categories "hoodies" "dresses" "t-shirts" --limit 50
+   ```
+4. Start app:
+   ```bash
+   streamlit run app/streamlit_app.py
+   ```
+5. Open the local Streamlit URL shown in terminal (usually `http://localhost:8501`).
 
 ---
 
