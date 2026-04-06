@@ -37,3 +37,15 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Reports & Documentation
+abstract_report.md
+part*_*.md
+prompt.txt
+
+# Debug & Test
+debug*.py
+print_debug.py
+debug_output.*
+*.json
+download*.jpg
