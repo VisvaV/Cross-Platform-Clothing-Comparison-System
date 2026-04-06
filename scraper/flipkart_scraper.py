@@ -29,7 +29,7 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
         from camoufox.async_api import AsyncCamoufox
 
         async with AsyncCamoufox(
-            headless=True,
+            headless=False,
             geoip=True,
             humanize=True,
             os="windows",
@@ -55,7 +55,7 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
 
             try:
                 await page.wait_for_selector(
-                    "div._1AtVbE, div._13oc-S, div[data-id]", timeout=20_000
+                    "div[data-id], div._1AtVbE, div._13oc-S", timeout=20_000
                 )
             except Exception:
                 logger.error("Flipkart: no cards found for '%s'.", category)
@@ -64,7 +64,7 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
             await auto_scroll(page)
 
             cards = await page.query_selector_all(
-                "div._1AtVbE, div[class*='_1AtVbE'], div._13oc-S"
+                "div[data-id], div._1AtVbE, div[class*='_1AtVbE'], div._13oc-S"
             )
 
             for card in cards:
@@ -72,23 +72,23 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
                     break
                 try:
                     title = await first_text(card, [
-                        "div._4rR01T", "a[class*='IRpwTa']",
-                        "[class*='product-title']",
-                        "a[title]", "div[class*='_4rR01T']",
+                        "a.IRpwTa", "a.WKTcLC", "a[title]", "div.KzDlHZ",
+                        "div._4rR01T", "[class*='product-title']",
+                        "div[class*='_4rR01T']",
                     ])
                     price_raw = await first_text(card, [
-                        "div._30jeq3", "[class*='_30jeq3']",
+                        "div.Nx9bqj", "div._30jeq3", "[class*='_30jeq3']",
                         "[class*='price']",
                     ])
                     brand = await first_text(card, [
-                        "div._2WkVRV", "[class*='_2WkVRV']",
+                        "div.syl9yP", "div._2WkVRV", "[class*='_2WkVRV']",
                         "[class*='brand']",
                     ])
                     product_url = await first_attr(card, [
-                        "a[class*='IRpwTa']", "a[href*='/p/']", "a",
+                        "a.VJA3rP", "a.IRpwTa", "a[target='_blank']", "a[href*='/p/']", "a",
                     ], "href")
                     image_url = await first_attr(card, [
-                        "img._396cs4", "img[class*='_396cs4']", "img",
+                        "img.DByuf4", "img._53J4C-", "img._396cs4", "img",
                     ], "src")
 
                     if not title or not product_url:
