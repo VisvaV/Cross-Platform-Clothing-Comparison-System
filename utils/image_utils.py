@@ -39,6 +39,9 @@ def download_image(url: str, save_path: str) -> bool:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
         return True
+    except requests.exceptions.ConnectionError:
+        logger.warning("Connection error (domain blocked or down): %s", url)
+        return False
     except Exception as e:
         logger.warning("Failed to download image from %s: %s", url, e)
         return False
