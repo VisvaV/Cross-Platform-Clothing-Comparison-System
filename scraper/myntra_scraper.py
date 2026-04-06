@@ -65,7 +65,7 @@ async def scrape_products(category: str, limit: int = 50) -> list[dict]:
         from camoufox.async_api import AsyncCamoufox
 
         async with AsyncCamoufox(
-            headless=True,
+            headless=False,
             geoip=True,
             humanize=True,
             os="windows",
