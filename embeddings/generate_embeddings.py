@@ -184,7 +184,8 @@ def generate_image_embeddings(
 def generate_text_embeddings(conn: sqlite3.Connection) -> None:
     """Fit TextEncoder on all product titles and save embeddings + id map."""
     products = get_all_products(conn)
-    titles   = [p["product_title"] or "" for p in products]
+    # Combine title, brand, and category into a single rich text string for TF-IDF
+    titles   = [f"{p.get('product_title') or ''} {p.get('brand') or ''} {p.get('category') or ''}".strip() for p in products]
     ids      = [p["id"] for p in products]
 
     if not titles:
