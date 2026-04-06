@@ -43,7 +43,7 @@ echo "Committing files individually..."
 # ── utils ─────────────────────────────────────────────────────────────────────
 commit_file "utils/text_utils.py"        "fix(utils): return None from extract_price on failure instead of 0.0 to fix price ranking bias"
 commit_file "utils/db_utils.py"          "chore(utils): db utility helpers"
-commit_file "utils/image_utils.py"       "chore(utils): image download helpers"
+commit_file "utils/image_utils.py"       "fix(utils): cleanly catch requests.exceptions.ConnectionError to mute NameResolutionError logs for blocked CDNs"
 
 # ── scraper base ──────────────────────────────────────────────────────────────
 commit_file "scraper/_base.py"           "refactor(scraper): migrate to camoufox; fix auto_scroll infinite loop with max_scrolls cap; bump Chrome UA to 124; expand dismiss_popups selectors"
@@ -52,9 +52,9 @@ commit_file "scraper/_base.py"           "refactor(scraper): migrate to camoufox
 commit_file "scraper/ajio_scraper.py"    "feat(scraper/ajio): rewrite with camoufox for Cloudflare bypass; URL-encode category; lazy-load img fallback via data-src"
 commit_file "scraper/amazon_scraper.py"  "feat(scraper/amazon): migrate to camoufox; URL-encode category with quote_plus"
 commit_file "scraper/asos_scraper.py"    "feat(scraper/asos): migrate to camoufox; URL-encode category with quote_plus"
-commit_file "scraper/flipkart_scraper.py" "feat(scraper/flipkart): migrate to camoufox; URL-encode category; stronger card wait; expand popup dismissal"
+commit_file "scraper/flipkart_scraper.py" "fix(scraper/flipkart): override headless mode to False and update DOM selectors to match newest site layout"
 commit_file "scraper/hm_scraper.py"      "feat(scraper/hm): migrate to camoufox; URL-encode category with quote_plus"
-commit_file "scraper/myntra_scraper.py"  "feat(scraper/myntra): migrate to camoufox; add slug map for correct path URLs; search fallback for multi-word queries"
+commit_file "scraper/myntra_scraper.py"  "fix(scraper/myntra): override headless mode to False to pass Cloudflare checks; add slug map"
 commit_file "scraper/uniqlo_scraper.py"  "feat(scraper/uniqlo): migrate to camoufox; URL-encode category with quote_plus"
 commit_file "scraper/zara_scraper.py"    "feat(scraper/zara): migrate to camoufox; URL-encode category with quote_plus"
 commit_file "scraper/__init__.py"        "chore(scraper): package init"
@@ -64,7 +64,7 @@ commit_file "ranking/ranking_engine.py"  "fix(ranking): push None-price products
 commit_file "ranking/__init__.py"        "chore(ranking): package init"
 
 # ── embeddings ────────────────────────────────────────────────────────────────
-commit_file "embeddings/generate_embeddings.py" "feat(embeddings): save text_id_map.pkl alongside text_embeddings.npy so text search maps to correct product IDs"
+commit_file "embeddings/generate_embeddings.py" "fix(embeddings): combine title, brand, and category into a single rich text string for TF-IDF"
 commit_file "embeddings/__init__.py"     "chore(embeddings): package init"
 
 # ── vector_search ─────────────────────────────────────────────────────────────
@@ -102,6 +102,11 @@ commit_file "requirements.txt"  "chore: drop version pins for wider compatibilit
 commit_file "migrate.py"        "chore: db migration script"
 commit_file ".gitignore"        "chore: update .gitignore"
 commit_file "README.md"         "docs: update README"
+commit_file "abstract_report.md" "docs: add generated academic report abstract"
+commit_file "part1_overview_architecture.md" "docs: add full learning guide (Part 1/4)"
+commit_file "part2_foundation_scrapers.md" "docs: add full learning guide (Part 2/4)"
+commit_file "part3_deeplearning_features.md" "docs: add full learning guide (Part 3/4)"
+commit_file "part4_search_ranking_ui.md" "docs: add full learning guide (Part 4/4)"
 commit_file "push_to_github.sh" "chore: per-file commit script with unique messages"
 
 echo ""
