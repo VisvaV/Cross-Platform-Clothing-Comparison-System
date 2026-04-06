@@ -26,7 +26,7 @@ The system runs in two phases:
 ├── features/               # CNN, color, texture, fusion extractors
 ├── models/                 # CNN encoder, text encoder, triplet model
 ├── ranking/                # Ranking and scoring utilities
-├── scraper/                # Per-platform Playwright scrapers
+├── scraper/                # Per-platform Camoufox scrapers (bypasses WAF/bot protection)
 ├── training/               # DeepFashion dataset loader + triplet training script
 ├── utils/                  # Image and text utilities, SQLite helpers
 ├── vector_search/          # FAISS index manager + similarity search
@@ -54,10 +54,12 @@ pip install -r requirements.txt
 > If OpenCV fails to import due missing system libraries (for example `libGL.so.1`),
 > this project still runs because color feature extraction now uses PIL + NumPy only.
 
-### Install Playwright Browsers
+### Install Stealth Browser (Camoufox)
+
+We use Camoufox (a stealth fork of Firefox) under the hood to completely bypass Cloudflare, WAF, and other bot protections. Do not install default Playwright browsers.
 
 ```bash
-playwright install chromium
+python -m camoufox fetch
 ```
 
 ---
@@ -100,8 +102,8 @@ The app will open in your browser. You can:
 
 ### Quick Run Checklist
 
-1. Install Python dependencies.
-2. Install Playwright browser once (`playwright install chromium`).
+1. Install Python dependencies (`pip install -r requirements.txt`).
+2. Install Camoufox stealth browser once (`python -m camoufox fetch`).
 3. Build data/index artifacts:
    ```bash
    python -m embeddings.generate_embeddings --categories "hoodies" "dresses" "t-shirts" --limit 50
